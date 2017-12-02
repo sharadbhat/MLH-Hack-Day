@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Matches</title>
+  </head>
+  <body>
+    {% if not matches %}
+    <h1 style="align=center">No matches found.</h1>
+    {% endif %}
+    {% if matches %}
+    <h1>Matche(s) found.</h1>
+    {% for i in matches %}
+      <img src="./static/images/{{ i }}.jpg" alt="lol." width=25%>
+    {% endfor %}
+    {% endif %}
+  </body>
+</html>

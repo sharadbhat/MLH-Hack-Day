@@ -2,22 +2,70 @@
 - Sharad Bhat
 - 2nd December, 2017
 """
-from clarifai import rest
-from clarifai.rest import ClarifaiApp
-from clarifai.rest import Image as ClImage
+import requests
 import ast
 
-CLIENT_ID = ""
+base_url = "https://westcentralus.api.cognitive.microsoft.com/face/v1.0/"
 
-with open('key.txt', 'r') as f:
-    CLIENT_ID = (f.readline()).strip()
+subscription_key = ""
+with open("key.txt", "r") as f:
+    subscription_key = (f.readline()).strip()
 
+choice = int(input("1. Upload missing person photo\n2. Upload found person photo\n3. List of missing persons\n"))
 
-app = ClarifaiApp(api_key=CLIENT_ID)
+headers = {
+    'Content-Type': 'application/octet-stream',
+    'Ocp-Apim-Subscription-Key': subscription_key
+}
+params = {
+'returnFaceId': 'true'
+}
 
-model = app.models.get('general-v1.3')
-image = ClImage(file_obj=open('a.jpg', 'rb'))
-r = model.predict([image])
+if choice == 1:
 
-for i in r["outputs"][0]["data"]["concepts"]:
-    print(i["name"], i["value"])
+    body = open('a.jpg', 'rb').read()
+    try:
+        response = requests.post(url= base_url + "facelists/mlh/persistedFaces?userData=IDK.", data = body, headers = headers, params = params)
+        a = ast.literal_eval(response.text)
+        print(a["persistedFaceId"])
+    except Exception as e:
+        print('Error in getting Face ID:')
+        print(e)
+
+if choice == 2:
+    faceId = ""
+    body = open('a.jpg', 'rb').read()
+    try:
+        response = requests.post(url= base_url + "detect", data = body, headers = headers, params = params)
+        a = ast.literal_eval(response.text)
+        faceId = a[0]["faceId"]
+    except Exception as e:
+        print('Error in getting Face ID:')
+        print(e)
+
+    headers = {
+        'Content-Type': 'application/json',
+        'Ocp-Apim-Subscription-Key': subscription_key
+    }
+    try:
+        data = "{\"faceId\" : \""+ faceId +"\", \"faceListId\" : \"mlh\", \"mode\" : \"matchFace\"}"
+        r = requests.post(url=base_url + "findsimilars", headers=headers, data=data)
+        a = ast.literal_eval(r.text)
+        print(a)
+    except Exception as e:
+        print("Error in finding similar:")
+        print(e)
+
+if choice == 3:
+    headers = {
+        'Content-Type': 'application/json',
+        'Ocp-Apim-Subscription-Key': subscription_key
+    }
+    try:
+        r = requests.get(url=base_url + "facelists/mlh", headers=headers)
+        a = ast.literal_eval(r.text)
+        for i in a["persistedFaces"]:
+            print(i["persistedFaceId"])
+    except Exception as e:
+        print("Error in getting face lists:")
+        print(e)
